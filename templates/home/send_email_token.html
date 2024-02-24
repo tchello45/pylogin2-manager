@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html data-bs-theme="dark" lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, shrink-to-fit=no">
+    <title>home</title>
+    <link rel="stylesheet" href="../static/home/assets/bootstrap/css/bootstrap.min.css">
+    <link rel="stylesheet" href="../static/home/assets/css/Navbar-With-Button-icons.css">
+</head>
+
+<body>
+    <nav class="navbar navbar-expand-md sticky-top bg-body py-3">
+        <div class="container"><a class="navbar-brand d-flex align-items-center" href="#"><span>PyLogin2</span></a><button data-bs-toggle="collapse" class="navbar-toggler" data-bs-target="#navcol-1"><span class="visually-hidden">Toggle navigation</span><span class="navbar-toggler-icon"></span></button>
+            <div class="collapse navbar-collapse d-xl-flex justify-content-xl-end" id="navcol-1"><a class="btn btn-primary" role="button" href="/logout">Log Out</a></div>
+        </div>
+    </nav>
+    <div class="container">
+        <div class="card">
+            <div class="card-body">
+                <form method="post">
+                    <div><input class="form-control" type="email" value="{{self['email']}}" name="email"></div>
+                    <div><button class="btn btn-primary" type="submit">Send token</button></div>
+                </form>
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        {% for category, message in messages %}
+                        {% if category == 'error' %}
+                        <div class="alert alert-danger" role="alert" style="width: 100%;"><span><strong>Error</strong> {{ message }}</span></div>
+                        {% elif category == 'success' %}
+                        <div class="alert alert-success" role="alert" style="width: 100%;"><span><strong>Success</strong> {{ message }}</span></div>
+                        {% endif %}
+                        {% endfor %}
+                    {% endif %}
+                {% endwith %}
+            </div>
+        </div>
+    </div>
+    <script src="../static/home/assets/bootstrap/js/bootstrap.min.js"></script>
+</body>
+
+</html>

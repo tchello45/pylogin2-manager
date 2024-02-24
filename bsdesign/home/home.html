@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html data-bs-theme="dark" lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, shrink-to-fit=no">
+    <title>home</title>
+    <link rel="stylesheet" href="assets/bootstrap/css/bootstrap.min.css">
+    <link rel="stylesheet" href="assets/css/Navbar-With-Button-icons.css">
+</head>
+
+<body>
+    <nav class="navbar navbar-expand-md sticky-top bg-body py-3">
+        <div class="container"><a class="navbar-brand d-flex align-items-center" href="#"><span>PyLogin2</span></a><button data-bs-toggle="collapse" class="navbar-toggler" data-bs-target="#navcol-1"><span class="visually-hidden">Toggle navigation</span><span class="navbar-toggler-icon"></span></button>
+            <div class="collapse navbar-collapse d-xl-flex justify-content-xl-end" id="navcol-1"><a class="btn btn-primary" role="button" href="/logout">Log Out</a></div>
+        </div>
+    </nav>
+    <div class="container">
+        <form method="post">
+            <div class="row">
+                <div class="col">
+                    <p>Username: {{self['username']}}</p>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-auto"><label class="col-form-label">E-Mail:</label></div>
+                <div class="col"><input class="form-control" type="email" value="{{self['email']}}" name="email"></div>
+            </div>
+            <div class="row">
+                <div class="col">
+                    <p>Role: {{self['role']}}</p>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col">
+                    <p>ID: {{self['id']}}</p>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col"><button class="btn btn-primary" type="submit" name="update">Update</button></div>
+            </div>
+        </form>
+    </div>
+    <script src="assets/bootstrap/js/bootstrap.min.js"></script>
+</body>
+
+</html>

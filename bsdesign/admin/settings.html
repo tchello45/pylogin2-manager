@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html data-bs-theme="light" lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, shrink-to-fit=no">
+    <title>admin</title>
+    <link rel="stylesheet" href="assets/bootstrap/css/bootstrap.min.css">
+    <link rel="stylesheet" href="assets/css/Login-Form-Basic-icons.css">
+</head>
+
+<body>
+    <nav class="navbar navbar-expand-md sticky-top bg-body py-3">
+        <div class="container"><a class="navbar-brand d-flex align-items-center" href="#"><span>PyLogin2</span></a><button data-bs-toggle="collapse" class="navbar-toggler" data-bs-target="#navcol-1"><span class="visually-hidden">Toggle navigation</span><span class="navbar-toggler-icon"></span></button>
+            <div class="collapse navbar-collapse" id="navcol-1">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item"><a class="nav-link" href="/index">Home</a></li>
+                    <li class="nav-item"><a class="nav-link" href="/create_user">Create user</a></li>
+                    <li class="nav-item"><a class="nav-link" href="/modify_user">Modify user</a></li>
+                    <li class="nav-item"><a class="nav-link active" href="#">Settings</a></li>
+                </ul><a class="btn btn-primary" role="button" href="/logout">Log Out</a>
+            </div>
+        </div>
+    </nav>
+    <div class="container">
+        <div class="row">
+            <div class="col-md-12">
+                <h2 class="d-lg-flex justify-content-lg-center">Settings management</h2>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col">
+                <form>
+                    <div class="form-check"><input class="form-check-input" type="checkbox" id="formCheck-1" name="registration_enabled"><label class="form-check-label" for="formCheck-1">Registration enabled</label></div>
+                    <div class="form-check"><input class="form-check-input" type="checkbox" id="formCheck-2" name="default_active"><label class="form-check-label" for="formCheck-2">Default active</label></div>
+                    <div class="form-check"><input class="form-check-input" type="checkbox" id="formCheck-3" name="default_allow_web_login"><label class="form-check-label" for="formCheck-3">Default allow web login</label></div>
+                    <div class="form-check"><input class="form-check-input" type="checkbox" id="formCheck-4" name="default_allow_api_login"><label class="form-check-label" for="formCheck-4">Default allow API login</label></div>
+                    <div class="form-check"><input class="form-check-input" type="checkbox" id="formCheck-5" name="default_allow_system_login"><label class="form-check-label" for="formCheck-5">Default allow system login</label></div><input class="form-control" type="text" placeholder="Default Role" name="default_role" style="width: auto;"><button class="btn btn-primary" type="submit" style="margin-top: 10px;" name="update">Update</button>
+                </form>
+            </div>
+            <div class="col">
+                <form><input class="form-control" type="text" placeholder="Registration password (blank for no password)" name="registration_password"><button class="btn btn-primary" type="submit" name="update_password">Update password</button></form>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col">
+                <form>
+                    <div class="form-check"><input class="form-check-input" type="checkbox" id="formCheck-7" name="email_verification_required"><label class="form-check-label" for="formCheck-7">E-Mail verification required</label></div>
+                    <div class="form-check"><input class="form-check-input" type="checkbox" id="formCheck-8" name="email_verification_force"><label class="form-check-label" for="formCheck-8">Force old E-Mails to verify</label></div><button class="btn btn-primary" type="submit" name="update_email_settings">Update E-Mail verification</button>
+                </form>
+            </div>
+        </div>
+    </div>
+    <script src="assets/bootstrap/js/bootstrap.min.js"></script>
+</body>
+
+</html>
