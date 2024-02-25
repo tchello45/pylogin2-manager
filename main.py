@@ -254,7 +254,12 @@ def create_user():
             password = request.form['password']
             email = request.form.get('email', None)
             role = request.form.get('role', None)
-            data = {'username': username, 'password': password, 'email': email, 'role': role}
+            allow_web_login = request.form.get('allow_web_login', False)
+            allow_api_login = request.form.get('allow_api_login', False)
+            allow_system_login = request.form.get('allow_system_login', False)
+            email_verified = request.form.get('email_verified', False)
+            active = request.form.get('active', False)
+            data = {'username': username, 'password': password, 'email': email, 'role': role, 'allow_web_login': allow_web_login, 'allow_api_login': allow_api_login, 'allow_system_login': allow_system_login, 'email_verified': email_verified, 'active': active}
             if not email:
                 data.pop('email')
             if not role:
@@ -294,7 +299,8 @@ def modify_user():
                 allow_api_login = request.form.get('allow_api_login', False)
                 allow_system_login = request.form.get('allow_system_login', False)
                 email_verified = request.form.get('email_verified', False)
-                data = {'username': username, 'password': password, 'email': email, 'role': role, 'allow_web_login': allow_web_login, 'allow_api_login': allow_api_login, 'allow_system_login': allow_system_login, 'email_verified': email_verified}
+                active = request.form.get('active', False)
+                data = {'username': username, 'password': password, 'email': email, 'role': role, 'allow_web_login': allow_web_login, 'allow_api_login': allow_api_login, 'allow_system_login': allow_system_login, 'email_verified': email_verified, 'active': active}
                 if not email:
                     data.pop('email')
                 if not role:
@@ -322,7 +328,7 @@ def modify_set_user(target_username):
             if 'delete' in request.form:
                 username = request.form['username']
                 headers = {'Authorization': 'Bearer '+token}
-                r = req.delete('https://'+pylogin2_host+':'+pylogin2_port+'/web/dev_alpha/user', json={'username': username}, headers=headers)
+                r = req.delete('https://'+pylogin2_host+':'+pylogin2_port+'/web/dev_alpha/user', json={'username': username}, headers=headers, verify=False)
                 if r.status_code == 200:
                     flash('User deleted', category='success')
                 else:
@@ -336,7 +342,8 @@ def modify_set_user(target_username):
                 allow_api_login = request.form.get('allow_api_login', False)
                 allow_system_login = request.form.get('allow_system_login', False)
                 email_verified = request.form.get('email_verified', False)
-                data = {'username': username, 'password': password, 'email': email, 'role': role, 'allow_web_login': allow_web_login, 'allow_api_login': allow_api_login, 'allow_system_login': allow_system_login, 'email_verified': email_verified}
+                active = request.form.get('active', False)
+                data = {'username': username, 'password': password, 'email': email, 'role': role, 'allow_web_login': allow_web_login, 'allow_api_login': allow_api_login, 'allow_system_login': allow_system_login, 'email_verified': email_verified, 'active': active}
                 if not email:
                     data.pop('email')
                 if not role:
@@ -344,7 +351,7 @@ def modify_set_user(target_username):
                 if not password:
                     data.pop('password')
                 headers = {'Authorization': 'Bearer '+token}
-                r = req.put('https://'+pylogin2_host+':'+pylogin2_port+'/web/dev_alpha/user', json=data, headers=headers)
+                r = req.put('https://'+pylogin2_host+':'+pylogin2_port+'/web/dev_alpha/user', json=data, headers=headers, verify=False)
                 if r.status_code == 200:
                     flash('User modified', category='success')
                 else:
@@ -428,9 +435,59 @@ def settings():
         settings_ = r.json()
         print(settings_)
         return render_template('admin/settings.html', settings=settings_)
-
-
-
+@app.route('/users')
+def users():
+    if 'token' in session:
+        token_ = session['token']
+        user_ = get_user(token_)
+        if user_['allow_api_login'] == False:
+            return redirect(url_for('home'))
+    else:
+        return redirect(url_for('login'))
+    headers = {'Authorization': 'Bearer '+token_}
+    r = req.post('https://'+pylogin2_host+':'+pylogin2_port+'/api/dev_alpha/users', headers=headers, verify=False, json={})
+    users_ = r.json()
+    return render_template('admin/users.html', users=users_)
+@app.route('/set_target_data', methods=['GET', 'POST'])
+def set_target_data():
+    if 'token' in session:
+        token_ = session['token']
+        user_ = get_user(token_)
+        if user_['allow_api_login'] == False:
+            return redirect(url_for('home'))
+    else:
+        return redirect(url_for('login'))
+    if request.method == 'POST':
+        username = request.form['username']
+        data = request.form['data']
+        data = base64.b64encode(data.encode()).decode()
+        headers = {'Authorization': 'Bearer '+token_}
+        r = req.put('https://'+pylogin2_host+':'+pylogin2_port+'/api/dev_alpha/encrypted_data', headers=headers, json={'username': username, 'data': data}, verify=False)
+        if r.status_code == 200:
+            flash('Data set successfully', 'success')
+        else:
+            flash(r.json()['msg'], 'error')
+    return render_template('admin/set_personal_data.html')
+@app.route('/set_target_data/<target_username>', methods=['GET', 'POST'])
+def set_target_data_target(target_username):
+    if 'token' in session:
+        token_ = session['token']
+        user_ = get_user(token_)
+        if user_['allow_api_login'] == False:
+            return redirect(url_for('home'))
+    else:
+        return redirect(url_for('login'))
+    if request.method == 'POST':
+        username = target_username
+        data = request.form['data']
+        data = base64.b64encode(data.encode()).decode()
+        headers = {'Authorization': 'Bearer '+token_}
+        r = req.put('https://'+pylogin2_host+':'+pylogin2_port+'/api/dev_alpha/encrypted_data', headers=headers, json={'username': username, 'data': data}, verify=False)
+        if r.status_code == 200:
+            flash('Data set successfully', 'success')
+        else:
+            flash(r.json()['msg'], 'error')
+    return render_template('admin/set_personal_data_target.html', target=target_username)
 
 
 

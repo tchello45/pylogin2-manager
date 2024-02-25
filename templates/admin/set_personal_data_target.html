@@ -4,9 +4,9 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, shrink-to-fit=no">
-    <title>admin</title>
-    <link rel="stylesheet" href="assets/bootstrap/css/bootstrap.min.css">
-    <link rel="stylesheet" href="assets/css/Login-Form-Basic-icons.css">
+    <title>PyLogin2 Admin</title>
+    <link rel="stylesheet" href="../static/admin/assets/bootstrap/css/bootstrap.min.css">
+    <link rel="stylesheet" href="../static/admin/assets/css/Login-Form-Basic-icons.css">
 </head>
 
 <body>
@@ -14,27 +14,24 @@
         <div class="container"><a class="navbar-brand d-flex align-items-center" href="#"><span>PyLogin2</span></a><button data-bs-toggle="collapse" class="navbar-toggler" data-bs-target="#navcol-1"><span class="visually-hidden">Toggle navigation</span><span class="navbar-toggler-icon"></span></button>
             <div class="collapse navbar-collapse" id="navcol-1">
                 <ul class="navbar-nav me-auto">
-                    <li class="nav-item"><a class="nav-link active" href="#">Home</a></li>
+                    <li class="nav-item"><a class="nav-link" href="/admin">Home</a></li>
                     <li class="nav-item"><a class="nav-link" href="/create_user">Create user</a></li>
                     <li class="nav-item"><a class="nav-link" href="/modify_user">Modify user</a></li>
                     <li class="nav-item"><a class="nav-link" href="/settings">Settings</a></li>
                     <li class="nav-item"><a class="nav-link" href="/users">Users</a></li>
-                    <li class="nav-item"><a class="nav-link" href="/set_target_data">Set target data</a></li>
+                    <li class="nav-item"><a class="nav-link active" href="#">Set target data</a></li>
                 </ul><a class="btn btn-primary" role="button" href="/logout">Log Out</a>
             </div>
         </div>
     </nav>
-    <div class="d-lg-flex flex-column justify-content-lg-center align-items-lg-center" style="padding-top: 20%;">
-        <div class="d-lg-flex justify-content-lg-center">
-            <p><strong>PyLogin2 Version:&nbsp;</strong></p>
-            <p id="pylogin2_version">{{version}}</p>
-        </div>
-        <div class="d-lg-flex justify-content-lg-center">
-            <p><strong>Current PyLogin2 user count:&nbsp;</strong></p>
-            <p id="user_count">{{user_count}}</p>
+    <div class="container">
+        <div class="card">
+            <div class="card-body">
+                <form method="post"><input class="form-control" type="text" placeholder="Username" name="username" value="{{target}}"><textarea class="form-control form-control-lg" name="data"></textarea><button class="btn btn-primary" type="submit">Encrypt</button></form>
+            </div>
         </div>
     </div>
-    <script src="assets/bootstrap/js/bootstrap.min.js"></script>
+    <script src="../static/admin/assets/bootstrap/js/bootstrap.min.js"></script>
 </body>
 
 </html>

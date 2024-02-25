@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html data-bs-theme="dark" lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, shrink-to-fit=no">
+    <title>admin</title>
+    <link rel="stylesheet" href="../static/admin/assets/bootstrap/css/bootstrap.min.css">
+    <link rel="stylesheet" href="../static/admin/assets/css/Login-Form-Basic-icons.css">
+</head>
+
+<body>
+    <nav class="navbar navbar-expand-md sticky-top bg-body py-3">
+        <div class="container"><a class="navbar-brand d-flex align-items-center" href="#"><span>PyLogin2</span></a><button data-bs-toggle="collapse" class="navbar-toggler" data-bs-target="#navcol-1"><span class="visually-hidden">Toggle navigation</span><span class="navbar-toggler-icon"></span></button>
+            <div class="collapse navbar-collapse" id="navcol-1">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item"><a class="nav-link" href="/admin">Home</a></li>
+                    <li class="nav-item"><a class="nav-link" href="/create_user">Create user</a></li>
+                    <li class="nav-item"><a class="nav-link" href="/modify_user">Modify user</a></li>
+                    <li class="nav-item"><a class="nav-link" href="/settings">Settings</a></li>
+                    <li class="nav-item"><a class="nav-link active" href="#">Users</a></li>
+                    <li class="nav-item"><a class="nav-link" href="/set_target_data">Set target data</a></li>
+                </ul><a class="btn btn-primary" role="button" href="/logout">Log Out</a>
+            </div>
+        </div>
+    </nav>
+    <div class="container">
+        <div class="card">
+            <div class="card-header">
+                <p>PyLogin2 users:</p>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Username</th>
+                                <th>Role</th>
+                                <th>Last login</th>
+                                <th>E-Mail</th>
+                                <th>E-Mail verified</th>
+                                <th>Active</th>
+                                <th>Modify user</th>
+                                <th>Set personal data</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for target in users %}
+                            <tr>
+                                <td>{{ target['username'] }}</td>
+                                <td>{{ target['role'] }}</td>
+                                <td>{{ target['last_login'] }}</td>
+                                <td>{{ target['email'] }}</td>
+                                <td>{{ target['email_verified'] }}</td>
+                                <td>{{ target['active'] }}</td>
+                                <td><a href="/modify_user/{{ target['username'] }}">Modify</a></td>
+                                <td><a href="/set_target_data/{{ target['username'] }}">Set data</a></td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="../static/admin/assets/bootstrap/js/bootstrap.min.js"></script>
+</body>
+
+</html>
