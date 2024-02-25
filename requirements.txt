@@ -1,3 +1,6 @@
 Flask
 flask-jwt-extended
 requests
+rsa
+pycryptodome
+pycryptodomex

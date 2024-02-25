@@ -2,6 +2,8 @@ from flask import Flask, render_template, request, redirect, url_for, flash, ses
 import json
 import os
 import requests as req
+import encryption
+import base64
 
 if not os.path.exists('data/pylogin2.conf'):
     raise Exception('Config file not found: pylogin2.conf')
@@ -13,12 +15,13 @@ with open('data/pylogin2.conf') as f:
     except:
         raise Exception('Config file is not valid')
 
+__version__ = "Dev Alpha 0.0.1"
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'my secret key'
 
 def get_username(token:str):
     headers = {'Authorization': 'Bearer '+token}
-    r = req.get('http://'+pylogin2_host+':'+pylogin2_port+'/web/dev_alpha/token', headers=headers)
+    r = req.get('https://'+pylogin2_host+':'+pylogin2_port+'/web/dev_alpha/token', headers=headers, verify=False)
     if r.status_code == 200:
         pass
     else:
@@ -29,15 +32,42 @@ def get_user(token:str, username:str=None):
     if username:
         data = {'username': username}
     headers = {'Authorization': 'Bearer '+token}
-    r = req.get('http://'+pylogin2_host+':'+pylogin2_port+'/web/dev_alpha/user', headers=headers, json=data)
+    r = req.get('https://'+pylogin2_host+':'+pylogin2_port+'/web/dev_alpha/user', headers=headers, json=data, verify=False)
     if r.status_code == 200:
         return r.json()
     else:
         print(r.text, "get_user")
         return r.json()
+def get_personal_data_req(token:str, password:str):
+    headers = {'Authorization': 'Bearer '+token}
+    r = req.get('https://'+pylogin2_host+':'+pylogin2_port+'/web/dev_alpha/encrypted_data', headers=headers, verify=False, json={})
+    if r.status_code == 200:
+        data = r.json()
+        try:
+            encrypted_private_key = base64.b64decode(data['encrypted_private_key'])
+            encrypted_data = base64.b64decode(data['encrypted_data'])
+            private_key = encryption.AESCipher(password.encode()).decrypt(encrypted_private_key)
+            private_key = encryption.RSACipher.import_private_key(private_key)
+            decrypted_data = encryption.RSAxAES.decrypt(private_key, encrypted_data)
+            return decrypted_data.decode()
+        except:
+            return None
+    else:
+        print(r.text, "get_personal_data")
+        return r.json()
+def set_personal_data_req(token:str, data:str):
+    headers = {'Authorization': 'Bearer '+token}
+    req_data = {'data': base64.b64encode(data.encode()).decode()}
+    r = req.put('https://'+pylogin2_host+':'+pylogin2_port+'/web/dev_alpha/encrypted_data', headers=headers, json=req_data, verify=False)
+    if r.status_code == 200:
+        return r.json()
+    else:
+        print(r.text, "set_personal_data")
+        return r.json()
 
 
 @app.route('/')
+@app.route('/index')
 def index():
     if 'token' in session:
         return redirect(url_for('home'))
@@ -50,7 +80,7 @@ def login():
         username = request.form['username']
         password = request.form['password']
         req_data = {'username': username, 'password': password, 'restricted_mode_allowed': True}
-        r = req.post('http://'+pylogin2_host+':'+pylogin2_port+'/web/dev_alpha/token', json=req_data)
+        r = req.post('https://'+pylogin2_host+':'+pylogin2_port+'/web/dev_alpha/token', json=req_data, verify=False)
         if r.status_code == 200:
             token = r.json()['token']
             session['token'] = token
@@ -78,7 +108,7 @@ def signup():
             data.pop('email')
         if not registration_password:
             data.pop('registration_password')
-        r = req.post('http://'+pylogin2_host+':'+pylogin2_port+'/dev_alpha/registration', json=data)
+        r = req.post('https://'+pylogin2_host+':'+pylogin2_port+'/dev_alpha/registration', json=data, verify=False)
         if r.status_code == 200:
             flash('Account created', category='success')
             return redirect(url_for('login'))
@@ -96,7 +126,7 @@ def home():
             email = request.form['email']
             data = {'email': email}
             headers = {'Authorization': 'Bearer '+token}
-            r = req.put('http://'+pylogin2_host+':'+pylogin2_port+'/web/dev_alpha/user', headers=headers, json=data)
+            r = req.put('https://'+pylogin2_host+':'+pylogin2_port+'/web/dev_alpha/user', headers=headers, json=data, verify=False)
             if r.status_code == 200:
                 flash('Email updated', category='success')
             else:
@@ -114,7 +144,7 @@ def verify():
             email_token = request.form['token']
             data = {'username': username, 'token': email_token}
             headers = {'Authorization': 'Bearer '+token}
-            r = req.put('http://'+pylogin2_host+':'+pylogin2_port+'/dev_alpha/registration', json=data, headers=headers)
+            r = req.put('https://'+pylogin2_host+':'+pylogin2_port+'/dev_alpha/registration', json=data, headers=headers, verify=False)
             if r.status_code == 200:
                 flash('Account verified', category='success')
                 return redirect(url_for('login'))
@@ -133,9 +163,9 @@ def request_email_token():
             email = request.form['email']
             data = {'username': username, 'email': email}
             headers = {'Authorization': 'Bearer '+token}
-            r = req.put('http://'+pylogin2_host+':'+pylogin2_port+'/web/dev_alpha/user', json=data, headers=headers)
+            r = req.put('https://'+pylogin2_host+':'+pylogin2_port+'/web/dev_alpha/user', json=data, headers=headers, verify=False)
             if r.status_code == 200:
-                r = req.get('http://'+pylogin2_host+':'+pylogin2_port+'/dev_alpha/registration', headers=headers)
+                r = req.get('https://'+pylogin2_host+':'+pylogin2_port+'/dev_alpha/registration', headers=headers, verify=False)
                 if r.status_code == 200:
                     flash('Email token sent', category='success')
                 else:
@@ -155,7 +185,7 @@ def change_password():
             password = request.form['password']
             data = {'username': username, 'old_password': old_password, 'password': password}
             headers = {'Authorization': 'Bearer '+token}
-            r = req.put('http://'+pylogin2_host+':'+pylogin2_port+'/web/dev_alpha/user', json=data, headers=headers)
+            r = req.put('https://'+pylogin2_host+':'+pylogin2_port+'/web/dev_alpha/user', json=data, headers=headers, verify=False)
             if r.status_code == 200:
                 flash('Password changed', category='success')
             else:
@@ -163,7 +193,35 @@ def change_password():
         return render_template('home/change_password.html', user=user)
     else:
         return redirect(url_for('login'))
-
+@app.route('/view_personal_data', methods=['GET', 'POST'])
+def view_personal_data():
+    if "token" in session:
+        token = session['token']
+        username = get_username(token)
+        user = get_user(token, username)
+        if request.method == 'POST':
+            password = request.form['password']
+            data = get_personal_data_req(token, password)
+            if data:
+                return render_template('home/personal_data.html', data=data)
+            else:
+                flash('Password incorrect', category='error')
+        return render_template('home/get_personal_data.html')
+    else:
+        return redirect(url_for('login'))
+@app.route('/set_personal_data', methods=['GET', 'POST'])
+def set_personal_data():
+    if "token" in session:
+        token = session['token']
+        username = get_username(token)
+        user = get_user(token, username)
+        if request.method == 'POST':
+            data = request.form['data']
+            set_personal_data_req(token, data)
+            return redirect(url_for('home'))
+        return render_template('home/set_personal_data.html')
+    else:
+        return redirect(url_for('login'))
 
 
 
@@ -176,11 +234,11 @@ def admin():
         if user['role'] == 'common':
             return redirect(url_for('home'))
         headers = {'Authorization': 'Bearer '+token}
-        r = req.get('http://'+pylogin2_host+':'+pylogin2_port+'/dev_alpha/info')
+        r = req.get('https://'+pylogin2_host+':'+pylogin2_port+'/dev_alpha/info', verify=False)
         version = r.json()['version']
-        r = req.get('http://'+pylogin2_host+':'+pylogin2_port+'/web/dev_alpha/users', headers=headers)
+        r = req.get('https://'+pylogin2_host+':'+pylogin2_port+'/web/dev_alpha/users', headers=headers, verify=False)
         user_count = r.text
-        return render_template('admin/home.html', user=user, version=version, user_count=user_count)
+        return render_template('admin/home.html', user=user, version=version, user_count=user_count, manager_version=__version__)
     else:
         return redirect(url_for('login'))
 @app.route('/create_user', methods=['GET', 'POST'])
@@ -202,7 +260,7 @@ def create_user():
             if not role:
                 data.pop('role')
             headers = {'Authorization': 'Bearer '+token}
-            r = req.post('http://'+pylogin2_host+':'+pylogin2_port+'/web/dev_alpha/user', json=data, headers=headers)
+            r = req.post('https://'+pylogin2_host+':'+pylogin2_port+'/web/dev_alpha/user', json=data, headers=headers, verify=False)
             if r.status_code == 200:
                 flash('User created', category='success')
             else:
@@ -222,7 +280,7 @@ def modify_user():
             if 'delete' in request.form:
                 username = request.form['username']
                 headers = {'Authorization': 'Bearer '+token}
-                r = req.delete('http://'+pylogin2_host+':'+pylogin2_port+'/web/dev_alpha/user', json={'username': username}, headers=headers)
+                r = req.delete('https://'+pylogin2_host+':'+pylogin2_port+'/web/dev_alpha/user', json={'username': username}, headers=headers, verify=False)
                 if r.status_code == 200:
                     flash('User deleted', category='success')
                 else:
@@ -244,7 +302,7 @@ def modify_user():
                 if not password:
                     data.pop('password')
                 headers = {'Authorization': 'Bearer '+token}
-                r = req.put('http://'+pylogin2_host+':'+pylogin2_port+'/web/dev_alpha/user', json=data, headers=headers)
+                r = req.put('https://'+pylogin2_host+':'+pylogin2_port+'/web/dev_alpha/user', json=data, headers=headers, verify=False)
                 if r.status_code == 200:
                     flash('User modified', category='success')
                 else:
@@ -264,7 +322,7 @@ def modify_set_user(target_username):
             if 'delete' in request.form:
                 username = request.form['username']
                 headers = {'Authorization': 'Bearer '+token}
-                r = req.delete('http://'+pylogin2_host+':'+pylogin2_port+'/web/dev_alpha/user', json={'username': username}, headers=headers)
+                r = req.delete('https://'+pylogin2_host+':'+pylogin2_port+'/web/dev_alpha/user', json={'username': username}, headers=headers)
                 if r.status_code == 200:
                     flash('User deleted', category='success')
                 else:
@@ -286,7 +344,7 @@ def modify_set_user(target_username):
                 if not password:
                     data.pop('password')
                 headers = {'Authorization': 'Bearer '+token}
-                r = req.put('http://'+pylogin2_host+':'+pylogin2_port+'/web/dev_alpha/user', json=data, headers=headers)
+                r = req.put('https://'+pylogin2_host+':'+pylogin2_port+'/web/dev_alpha/user', json=data, headers=headers)
                 if r.status_code == 200:
                     flash('User modified', category='success')
                 else:
@@ -316,34 +374,34 @@ def settings():
             if not default_role:
                 data.pop('default_role')
             headers = {'Authorization': 'Bearer '+token_}
-            r = req.put('http://'+pylogin2_host+':'+pylogin2_port+'/api/dev_alpha/settings', headers=headers, json=data)
+            r = req.put('https://'+pylogin2_host+':'+pylogin2_port+'/api/dev_alpha/settings', headers=headers, json=data, verify=False)
             if r.status_code == 200:
                 flash('Settings updated successfully', 'success')
                 headers = {'Authorization': 'Bearer '+token_}
-                r = req.get('http://'+pylogin2_host+':'+pylogin2_port+'/api/dev_alpha/settings', headers=headers)
+                r = req.get('https://'+pylogin2_host+':'+pylogin2_port+'/api/dev_alpha/settings', headers=headers, verify=False)
                 settings_ = r.json()
                 return render_template('admin/settings.html', settings=settings_)
             else:
                 flash(r.json()["msg"], 'error')
                 headers = {'Authorization': 'Bearer '+token_}
-                r = req.get('http://'+pylogin2_host+':'+pylogin2_port+'/api/dev_alpha/settings', headers=headers)
+                r = req.get('https://'+pylogin2_host+':'+pylogin2_port+'/api/dev_alpha/settings', headers=headers, verify=False)
                 settings_ = r.json()
                 return render_template('admin/settings.html', settings=settings_)
         if 'update_password' in request.form:
             registration_password = request.form.get('registration_password', "")
             data = {'registration_password': registration_password}
             headers = {'Authorization': 'Bearer '+token_}
-            r = req.put('http://'+pylogin2_host+':'+pylogin2_port+'/api/dev_alpha/settings', headers=headers, json=data)
+            r = req.put('https://'+pylogin2_host+':'+pylogin2_port+'/api/dev_alpha/settings', headers=headers, json=data, verify=False)
             if r.status_code == 200:
                 flash('Settings updated successfully', 'success')
                 headers = {'Authorization': 'Bearer '+token_}
-                r = req.get('http://'+pylogin2_host+':'+pylogin2_port+'/api/dev_alpha/settings', headers=headers)
+                r = req.get('https://'+pylogin2_host+':'+pylogin2_port+'/api/dev_alpha/settings', headers=headers, verify=False)
                 settings_ = r.json()
                 return render_template('admin/settings.html', settings=settings_)
             else:
                 flash(r.json()["msg"], 'error')
                 headers = {'Authorization': 'Bearer '+token_}
-                r = req.get('http://'+pylogin2_host+':'+pylogin2_port+'/api/dev_alpha/settings', headers=headers)
+                r = req.get('https://'+pylogin2_host+':'+pylogin2_port+'/api/dev_alpha/settings', headers=headers, verify=False)
                 settings_ = r.json()
                 return render_template('admin/settings.html', settings=settings_)
         if 'update_email_settings' in request.form:
@@ -351,25 +409,32 @@ def settings():
             email_verification_force = request.form.get('email_verification_force', False)
             data = {'verified_email_required': email_verification_required, 'email_verification_force': email_verification_force}
             headers = {'Authorization': 'Bearer '+token_}
-            r = req.put('http://'+pylogin2_host+':'+pylogin2_port+'/api/dev_alpha/settings', headers=headers, json=data)
+            r = req.put('https://'+pylogin2_host+':'+pylogin2_port+'/api/dev_alpha/settings', headers=headers, json=data, verify=False)
             if r.status_code == 200:
                 flash('Settings updated successfully', 'success')
                 headers = {'Authorization': 'Bearer '+token_}
-                r = req.get('http://'+pylogin2_host+':'+pylogin2_port+'/api/dev_alpha/settings', headers=headers)
+                r = req.get('https://'+pylogin2_host+':'+pylogin2_port+'/api/dev_alpha/settings', headers=headers, verify=False)
                 settings_ = r.json()
                 return render_template('admin/settings.html', settings=settings_)
             else:
                 flash(r.json()["msg"], 'error')
                 headers = {'Authorization': 'Bearer '+token_}
-                r = req.get('http://'+pylogin2_host+':'+pylogin2_port+'/api/dev_alpha/settings', headers=headers)
+                r = req.get('https://'+pylogin2_host+':'+pylogin2_port+'/api/dev_alpha/settings', headers=headers, verify=False)
                 settings_ = r.json()
                 return render_template('admin/settings.html', settings=settings_)
     else:
         headers = {'Authorization': 'Bearer '+token_}
-        r = req.get('http://'+pylogin2_host+':'+pylogin2_port+'/api/dev_alpha/settings', headers=headers)
+        r = req.get('https://'+pylogin2_host+':'+pylogin2_port+'/api/dev_alpha/settings', headers=headers, verify=False)
         settings_ = r.json()
         print(settings_)
         return render_template('admin/settings.html', settings=settings_)
+
+
+
+
+
+
+
 
 if __name__ == '__main__':
     app.run(debug=True, port=5001)
