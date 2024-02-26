@@ -4,6 +4,9 @@ import os
 import requests as req
 import encryption
 import base64
+from flask_socketio import SocketIO, emit, join_room, leave_room, close_room, rooms, disconnect, send
+from database import chat
+from datetime import datetime
 
 if not os.path.exists('data/pylogin2.conf'):
     raise Exception('Config file not found: pylogin2.conf')
@@ -17,13 +20,14 @@ with open('data/pylogin2.conf') as f:
 
 __version__ = "Dev Alpha 0.0.1"
 app = Flask(__name__)
+socketio = SocketIO(app)
 app.config['SECRET_KEY'] = 'my secret key'
 
 def get_username(token:str):
     headers = {'Authorization': 'Bearer '+token}
     r = req.get('https://'+pylogin2_host+':'+pylogin2_port+'/web/dev_alpha/token', headers=headers, verify=False)
     if r.status_code == 200:
-        pass
+        return r.json()["current_user"]
     else:
         print(r.text, "get_username")
         return r.json()["current_user"]
@@ -64,7 +68,21 @@ def set_personal_data_req(token:str, data:str):
     else:
         print(r.text, "set_personal_data")
         return r.json()
-
+def gen_room_name(sender:str, receiver:str):
+    return "_".join(sorted([sender, receiver]))
+def get_public_key(username:str=None):
+    if username:
+        data = {'username': username}
+    else:
+        data = {}
+    token = session['token']
+    headers = {'Authorization': 'Bearer '+token}
+    r = req.get('https://'+pylogin2_host+':'+pylogin2_port+'/web/dev_alpha/public_key', json=data, verify=False, headers=headers)
+    if r.status_code == 200:
+        return r.json()['public_key']
+    else:
+        print(r.text, "get_public_key")
+        return None
 
 @app.route('/')
 @app.route('/index')
@@ -490,8 +508,72 @@ def set_target_data_target(target_username):
     return render_template('admin/set_personal_data_target.html', target=target_username)
 
 
+@app.errorhandler(500)
+def internal_error(error):
+    session.pop('token', None)
+    return render_template('home/login.html'), 200
+@app.errorhandler(404)
+def not_found_error(error):
+    return redirect(url_for('home')), 200
 
-
+@socketio.on('send_message')
+def send_message(data):
+    print("send_message")
+    if 'token' in session:
+        token = session['token']
+        username = get_username(token)
+        receiver = data['receiver']
+        recv_public_key = get_public_key(receiver)
+        if not recv_public_key:
+            return "Error"
+        message = data['message']
+        room_name = gen_room_name(username, receiver)
+        chat_db = chat('data/db.conf')
+        chat_db.insert_message(username, receiver, message, message)
+        chat_db.close()
+        emit('recv_message', {'sender': username, 'receiver': receiver, 'message': message, 'timestamp': datetime.now().strftime("%Y-%m-%d %H:%M:%S")}, room=room_name)
+    else:
+        return "Error"
+@socketio.on('join')
+def join(data):
+    if 'token' in session:
+        token = session['token']
+        username = get_username(token)
+        receiver = data['receiver']
+        room_name = gen_room_name(username, receiver)
+        join_room(room_name)
+    else:
+        return "Error"
+    
+@app.route('/chat/<receiver>')
+def chat_page(receiver):
+    if 'token' in session:
+        token = session['token']
+        username = get_username(token)
+        print(username, receiver)
+        room_name = gen_room_name(username, receiver)
+        chat_db = chat('data/db.conf')
+        messages = chat_db.get_messages(username, receiver)
+        chat_db.close()
+        return render_template('home/chat.html', receiver=receiver, messages=messages, username=username, room_name=room_name)
+    else:
+        return redirect(url_for('login'))
+@app.route('/chat', methods=['GET', 'POST'])
+def chat_home():
+    if 'token' in session:
+        token = session['token']
+        username = get_username(token)
+        user = get_user(token, username)
+        if request.method == 'POST':
+            receiver = request.form['target']
+            public_key_target = get_public_key(receiver)
+            if not public_key_target:
+                flash('User not found', category='error')
+                return redirect(url_for('chat_home'))
+            return redirect(url_for('chat_page', receiver=receiver))
+        return render_template('home/set_chat.html', user=user)
+    else:
+        return redirect(url_for('login'))
 
 if __name__ == '__main__':
-    app.run(debug=True, port=5001)
+    socketio.run(app, debug=True, host='0.0.0.0', port=5001)

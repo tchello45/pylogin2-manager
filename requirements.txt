@@ -4,3 +4,5 @@ requests
 rsa
 pycryptodome
 pycryptodomex
+psycopg2-binary
+flask-socketio
