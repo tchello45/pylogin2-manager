@@ -42,6 +42,13 @@ class chat(db):
         """
         self.cur.execute(query)
         self.conn.commit()
+    def delete_db(self) -> None:
+        query = """
+        DROP TABLE IF EXISTS messages;
+        """
+        self.cur.execute(query)
+        self.conn.commit()
+    
     def insert_message(self, sender:str, receiver:str, enc_message_sender:str, enc_message_receiver:str, type:str="text") -> None:
         query = f"""
         INSERT INTO messages (sender, receiver, enc_message_sender, enc_message_receiver, type)
